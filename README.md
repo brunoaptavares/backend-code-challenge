@@ -1,64 +1,119 @@
-Ruby/Elixir Engineer Coding Challenge
-=======================
+Ruby Engineer Coding Challenge
+ =======================
 
-Hello!
+#### Apresentação
 
-We've come up with this relatively open-ended programming/engineering challenge that will allow you to demonstrate your skills from the comfort of your own workspace. In addition, we know your time is valuable, so please feel free to use your completed work as a portfolio piece.
+Olá, meu nome é Bruno Tavares, e esta é a minha solução para o desafio de desenvolvimento RUBY.
 
-We wish you the best of luck and can't wait to see what you create!
+Optei pela utilização do banco de dados Postgresql e a execução dos testes com RSPEC.
 
-## Overview
+Criei dois modelos, um no banco de dados e um em memória.
 
-Your goal is to develop a system to calculate the shipping cost for products of an order, based on it's weight and distance from origin to destination. The distribution points will be supplied to this system throught an API and the shipping cost will be calculated in another API, always aiming at the lowest cost to the customer.
+* O modelo DISTANCE foi criado para armazenar a distancia entre as cidades atendidas pelo sistema de entrega.
+* O modelo SHIPPING foi criado apenas lógico pois não é necessário persistir a informação do custo de entrega no banco de dados, pois a taxa de entrega pode ser alterada sem a necessidade de atualizar toda a base de dados.
 
-To populate the database, another system will call the API informing the distance (in kilometers) between *origin* and *destination* of two distribution points. For example:
+Criei dois controllers:
+
+* DistanceController para ser responsável por receber o comando POST e criar um objeto no banco de dados do tipo DISTANCE, realizando a consistência necessária.
+* ShippingController para ser o responsável por receber o comando GET e retornar ao solicitante o custo total da entrega de um item entre duas cidades de acordo com o peso do item.
+
+Criei a excessão Shipping::PathNotFoundError customizada para representar o erro que podemos receber quando nenhum caminho é encontrado para a entrega entre duas cidades.
+
+Criei o ExceptionHandler para controlar o retorno tratado em um JSON para os cenários de erro que a aplicação pode receber.
+
+No application.yml estão parametrizados os seguintes valores:
+
+* peso mínimo e máximo de um item a ser entregue
+* taxa de entrega
+* distancia mínima e máxima entre a cidade de origem e destino de uma entrega
+
+Esta parametrização foi feita para que se for necessário alterar algum destes pontos, não será necessário realizar um novo deploy da aplicação.
+
+#### Dependências
+
+* Ruby 2.4.1
+* Rails 5.2
+* [dijkstra.gem](https://github.com/oscartanner/dijkstra.gem)
+* PostgreSQL
+
+### Preparando e rodando o Ambiente
+
+* 1\. Instalar PostgreSQL
+* 2\. Criar usuário para o postgres. Obs: no config database.yml consta as informações utilizadas neste projeto
+* 3\. Instalar o Ruby
+* 4\. Instalar o Bundler
+* 5\. Executar ``` bundle install ```
+* 6\. Rodar os testes com ``` bundle exec rspec ```
+* 7\. Rodar a aplicação com ``` bundle exec rails s ```
+
+## Funcionalidades da API
+
+ ### Recursos
+
+ ####POST /distance
+
+ Cria ou atualiza um registro referente a distancia entre dois locais.
+
+ Envio:
+
+```{ "point_a": "Cidade 1", "point_b": "Cidade 2", "distance": 200 } ```
+
+ Retorno com Sucesso (status 201):
+
+ ```
+ {
+    "id": "021c7927-2737-4735-8e52-d3272b43eeea",
+    "point_a": "Cidade 1",
+    "point_b": "Cidade 2",
+    "distance": 200,
+    "created_at": "2018-08-05T02:34:13.055Z",
+    "updated_at": "2018-08-05T02:52:33.844Z"
+}
 ```
-POST /distance
-A B 10
-```
-```
-POST /distance
-B C 15
-```
-```
-POST /distance
-A C 30
-```
 
-In a second moment, the shopping system will call the API informing the total weight of the order, the source and destination points. The system should return the lowest shipping cost, using the formula: `cost = distance * weight * 0.15`. For example:
+Retorno com Falha (status 412):
 
 ```
-GET /cost?origin=A&destination=C&weight=5
-18.75
+{
+    "message": "Record invalid"
+}
 ```
 
-Explanation: the shortest path from A to C is A -> B -> C = 25km. `cost = 25 * 5 * 0.15 = 18.75`
+ ####GET /cost
 
-## Considerations
+ Obtem o custo efetivo para a entrega de um item de acordo com o peso e a distancia a ser percorrida considerando a menor distância possível.
 
-* The input format of distance should have the format `A B X`, where *0 < X <= 100000*. Wrong format or data should return an error;
-* If a distance point already exists, should be replaced with the new value;
-* The cost API should validate the given points and weight, where *0 < wheight <= 50*. If no path was found between *origin*  and *destination*, an error should be returned;
-* The solution should be implemented in Ruby or Elixir. You could use the frameworks that you're most used to.
-* Both APIs will receive a large amount of requests: choose the design and technology wisely;
+ Envio:
 
-## Submission
+```/cost?origin=Cidade1&destination=Cidade2&weight=10 ```
 
-You can follow the GitHub Fork/Pull Request workflow by [forking this repository](https://github.com/RakutenBrasil/backend-code-challenge/fork), commiting your changes, and submiting a pull request to us, explaning your solution, technical decisions and how configure/use on the README file. For more information about that, you can see this [GitHub article](https://help.github.com/articles/fork-a-repo/#propose-changes-to-someone-elses-project).
+ Retorno com Sucesso (status 200):
 
-## What we are looking for
+ ```
+{
+    "origin": "Cidade1",
+    "destination": "Cidade2",
+    "weight": 10,
+    "cost": 294.5
+}
+```
 
-We are looking for several things with this challenge. First, of course, we're looking for your answer to be technically correct. Beyond that, we're also looking for:
+Retorno com Falha (status 412):
 
-* Is your code easy to read and understand?
-* Are you following the usual conventions for Ruby/Elixir development?
-* How good are you at writing tests? And how easy are they to read and understand?
-* Did you follow these directions?
+```
+{
+    "message": "Record invalid"
+}
+```
 
-We will of course **examine your code to see its correctness, readability, general elegance, architectural decisions, and modularity**. If/when you meet with us, be prepared to talk about why and how you design your solution. We also test your system with a large amount of data to mesure the performance and to see if we can break stuff.
+## Heroku
 
-That's it. There aren't any hidden gotchas or trick questions. That's really what we're going to do.
+Esta API está disponível através das seguintes URL's
 
-## License
+```
+http://brunotavaresrakuten.herokuapp.com/distance/
+```
 
-We have licensed this project under the MIT license so that you may use this for a portfolio piece (or anything else!).
+```
+http://brunotavaresrakuten.herokuapp.com/cost
+```

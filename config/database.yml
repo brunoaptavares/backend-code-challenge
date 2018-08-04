@@ -1,0 +1,22 @@
+default: &default
+  adapter:  postgresql
+  host:     postgres
+  username: rakuten
+  password: netukar
+  pool: false
+
+
+development:
+  <<: *default
+  host:     localhost
+  database: rakuten_challenge
+
+test:
+  <<: *default
+  host:     localhost
+  database: rakuten_challenge_test
+
+production:
+  <<: *default
+  host:     localhost
+  database: rakuten_challenge

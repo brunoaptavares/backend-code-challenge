@@ -1,0 +1,26 @@
+development:
+  shipping:
+    min_weight: 0
+    max_weight: 50
+    rate: 0.15
+  distance:
+    min: 0
+    max: 100000
+
+test: &test
+  shipping:
+    min_weight: 0
+    max_weight: 50
+    rate: 0.15
+  distance:
+    min: 0
+    max: 100000
+
+production:
+  shipping:
+    min_weight: 0
+    max_weight: 50
+    rate: 0.15
+  distance:
+    min: 0
+    max: 100000
